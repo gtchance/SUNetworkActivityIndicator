@@ -14,80 +14,80 @@ import UIKit
 public let NetworkActivityIndicatorActiveCountChangedNotification = "ActiveCountChanged"
 
 /// NetworkActivityIndicator
-public class NetworkActivityIndicator {
-  
+open class NetworkActivityIndicator {
+
   /// Singleton: shared instance (private var)
-  private static let sharedInstance = NetworkActivityIndicator()
-  
+  fileprivate static let sharedInstance = NetworkActivityIndicator()
+
   /// enable sync access (like Objective-C's `@synchronized`)
-  private let syncQueue = dispatch_queue_create(
-    "NetworkActivityIndicatorManager.syncQueue",
-    DISPATCH_QUEUE_SERIAL
+  fileprivate let syncQueue = DispatchQueue(
+    label: "NetworkActivityIndicatorManager.syncQueue",
+    attributes: []
   )
-  
+
   /**
    ActiveCount
-  
+
    If count is above 0,
-  
+
    ```
    UIApplication.sharedApplication().networkActivityIndicatorVisible
    ```
-  
+
    is true, else false.
   */
-  private(set) public var activeCount: Int {
+  fileprivate(set) open var activeCount: Int {
     didSet {
-      UIApplication.sharedApplication()
-        .networkActivityIndicatorVisible = activeCount > 0
+      UIApplication.shared
+        .isNetworkActivityIndicatorVisible = activeCount > 0
       if activeCount < 0 {
         activeCount = 0
       }
-      NSNotificationCenter.defaultCenter().postNotificationName(
-        NetworkActivityIndicatorActiveCountChangedNotification,
+      NotificationCenter.default.post(
+        name: Notification.Name(rawValue: NetworkActivityIndicatorActiveCountChangedNotification),
         object: activeCount
       )
     }
   }
-  
+
   /**
    Initializer (private)
-  
+
    - returns: instance
    */
-  private init() {
+  fileprivate init() {
     self.activeCount = 0
   }
-  
-  public class func shared() -> NetworkActivityIndicator {
+
+  open class func shared() -> NetworkActivityIndicator {
     return sharedInstance
   }
-  
+
   /**
    Count up `activeCount` and `networkActivityIndicatorVisible` change to true.
    */
-  public func start() {
-    dispatch_sync(syncQueue) { [unowned self] in
+  open func start() {
+    syncQueue.sync { [unowned self] in
       self.activeCount += 1
     }
   }
-  
+
   /**
    Count down `activeCount` and if count is zero, `networkActivityIndicatorVisible` change to false.
    */
-  public func end() {
-    dispatch_sync(syncQueue) { [unowned self] in
+  open func end() {
+    syncQueue.sync { [unowned self] in
       self.activeCount -= 1
     }
   }
-  
+
   /**
    Reset `activeCount` and `networkActivityIndicatorVisible` change to false.
    */
-  public func endAll() {
-    dispatch_sync(syncQueue) { [unowned self] in
+  open func endAll() {
+    syncQueue.sync { [unowned self] in
       self.activeCount = 0
     }
   }
-  
+
 }
